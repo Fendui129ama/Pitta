@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pitta — Trading Aggregator · FireTrader</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/ethers@6.9.0/dist/ethers.umd.min.js"></script>
+  <style>
+    :root {
+      --bg: #0f0f12;
+      --bg-panel: #18181c;
+      --bg-elev: #222228;
+      --border: #2e2e36;
+      --accent: #f59e0b;
+      --accent-soft: rgba(245, 158, 11, 0.18);
+      --green: #10b981;
+      --green-soft: rgba(16, 185, 129, 0.15);
+      --red: #ef4444;
+      --red-soft: rgba(239, 68, 68, 0.15);
+      --text: #f4f4f5;
+      --text-dim: #a1a1aa;
+      --radius: 10px;
+      --font: 'Outfit', sans-serif;
+      --mono: 'Geist Mono', monospace;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: var(--font);
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      background-image: radial-gradient(ellipse 90% 50% at 50% -15%, rgba(120, 60, 10, 0.25), transparent);
+    }
+    .wrap { max-width: 1080px; margin: 0 auto; padding: 1.5rem; }
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 1rem;
+      padding-bottom: 1.25rem;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 1.25rem;
+    }
+    .logo { font-weight: 700; font-size: 1.65rem; color: var(--accent); letter-spacing: 0.02em; }
+    .tagline { font-size: 0.8rem; color: var(--text-dim); margin-top: 0.2rem; }
+    .header-right { display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; }
+    input.contract {
+      width: 260px;
+      padding: 0.5rem 0.75rem;
+      font-family: var(--mono);
+      font-size: 0.8rem;
+      background: var(--bg-panel);
+      border: 1px solid var(--border);
+      color: var(--text);
+      border-radius: var(--radius);
+    }
+    input.contract:focus { outline: none; border-color: var(--accent); }
+    .addr { font-family: var(--mono); font-size: 0.8rem; color: var(--green); max-width: 140px; overflow: hidden; text-overflow: ellipsis; }
+    .btn {
+      font-family: var(--font);
+      font-weight: 500;
+      padding: 0.5rem 1rem;
+      border: 1px solid var(--border);
+      background: var(--bg-panel);
+      color: var(--text);
+      cursor: pointer;
+      border-radius: var(--radius);
+      font-size: 0.9rem;
+    }
