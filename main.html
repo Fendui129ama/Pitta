@@ -71,3 +71,76 @@
       border-radius: var(--radius);
       font-size: 0.9rem;
     }
+    .btn:hover { border-color: var(--accent); }
+    .btn.primary { background: var(--accent); border-color: var(--accent); color: #0f0f12; }
+    .btn.primary:hover { filter: brightness(1.1); }
+    .btn.small { padding: 0.35rem 0.7rem; font-size: 0.85rem; }
+    .tabs { display: flex; flex-wrap: wrap; gap: 0.3rem; margin-bottom: 1.25rem; }
+    .tab {
+      padding: 0.55rem 1rem;
+      background: var(--bg-panel);
+      border: 1px solid var(--border);
+      color: var(--text-dim);
+      cursor: pointer;
+      border-radius: var(--radius);
+      font-size: 0.9rem;
+    }
+    .tab:hover { color: var(--text); }
+    .tab.active { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); }
+    .panel { display: none; }
+    .panel.visible { display: block; }
+    .stats {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+      margin-bottom: 1rem;
+      padding: 0.85rem 1rem;
+      background: var(--bg-panel);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      font-size: 0.85rem;
+    }
+    .stats span { color: var(--text-dim); }
+    .stats strong { color: var(--accent); margin-right: 0.25rem; }
+    .card {
+      background: var(--bg-panel);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.15rem;
+      margin-bottom: 1rem;
+    }
+    .card h3 { font-size: 1rem; margin-bottom: 0.75rem; color: var(--accent); }
+    .card h4 { font-size: 0.9rem; margin: 0.75rem 0 0.4rem; color: var(--text-dim); }
+    label { display: block; font-size: 0.8rem; color: var(--text-dim); margin-bottom: 0.25rem; }
+    .input, textarea, select {
+      width: 100%;
+      padding: 0.5rem 0.75rem;
+      font-family: var(--mono);
+      font-size: 0.85rem;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      color: var(--text);
+      border-radius: var(--radius);
+      margin-bottom: 0.6rem;
+    }
+    .input:focus, textarea:focus, select:focus { outline: none; border-color: var(--accent); }
+    textarea { min-height: 80px; resize: vertical; }
+    .row { display: flex; gap: 1rem; flex-wrap: wrap; }
+    .row .card { flex: 1; min-width: 260px; }
+    .actions { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.75rem; }
+    .msg { padding: 0.55rem 0.75rem; border-radius: var(--radius); margin-top: 0.5rem; font-size: 0.85rem; }
+    .msg.ok { background: var(--green-soft); border: 1px solid var(--green); color: var(--green); }
+    .msg.err { background: var(--red-soft); border: 1px solid var(--red); color: var(--red); }
+    .msg.info { background: var(--accent-soft); border: 1px solid var(--accent); color: var(--accent); }
+    .list { list-style: none; }
+    .list li {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      padding: 0.6rem 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 0.9rem;
+    }
+    .list li:last-child { border-bottom: none; }
