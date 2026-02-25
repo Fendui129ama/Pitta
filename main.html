@@ -582,3 +582,76 @@
           statsBar.style.display = 'flex';
           const statsDesc = document.getElementById('stats-desc');
           if (statsDesc) statsDesc.style.display = 'block';
+          loadStats();
+          loadVenues();
+        } catch (e) {
+          showMsg('route-msg', e.message || 'Attach failed.', 'err');
+        }
+      }
+
+      async function loadStats() {
+        if (!contract) return;
+        try {
+          const cfg = await contract.getConfig();
+          const ids = await contract.getVenueIds();
+          const len = Array.isArray(ids) ? ids.length : (ids && ids.length !== undefined ? Number(ids.length) : 0);
+          document.getElementById('stat-venues').textContent = len;
+          document.getElementById('stat-fee').textContent = cfg[3].toString();
+          document.getElementById('stat-paused').textContent = cfg[5] ? 'Yes' : 'No';
+          document.getElementById('stat-paused').style.color = cfg[5] ? 'var(--red)' : 'var(--green)';
+        } catch (_) {}
+      }
+
+      async function loadVenues() {
+        const list = document.getElementById('venues-list');
+        const empty = document.getElementById('venues-empty');
+        list.innerHTML = '';
+        empty.style.display = 'none';
+        if (!contract) { empty.style.display = 'block'; return; }
+        try {
+          const ids = await contract.getVenueIds();
+          const len = Array.isArray(ids) ? ids.length : (ids && ids.length !== undefined ? Number(ids.length) : 0);
+          if (len === 0) { empty.style.display = 'block'; return; }
+          for (let i = 0; i < len; i++) {
+            const vid = ids[i];
+            try {
+              const v = await contract.getVenue(vid);
+              const count = await contract.getVenueTradeCount(vid);
+              const vol = await contract.getVenueVolumeWei(vid);
+              const li = document.createElement('li');
+              li.innerHTML = '<span>Venue #' + vid + ' · ' + (v[0] ? v[0].slice(0, 10) + '…' : '—') + '</span>' +
+                '<span class="mono">' + (v[3] ? 'active' : 'inactive') + ' · trades ' + count + ' · vol ' + ethers.formatEther(vol || 0) + ' ETH</span>';
+              list.appendChild(li);
+            } catch (_) {}
+          }
+        } catch (e) {
+          empty.style.display = 'block';
+        }
+      }
+
+      document.getElementById('btn-refresh-venues').addEventListener('click', loadVenues);
+
+      document.getElementById('btn-active-venues').addEventListener('click', async function() {
+        const out = document.getElementById('active-venues-out');
+        out.textContent = '';
+        if (!contract) { out.textContent = 'Attach contract first.'; return; }
+        try {
+          const ids = await contract.getActiveVenueIds();
+          const len = Array.isArray(ids) ? ids.length : (ids && ids.length !== undefined ? Number(ids.length) : 0);
+          out.textContent = len === 0 ? 'No active venues.' : ids.join(', ');
+        } catch (e) {
+          out.textContent = 'Error: ' + (e.message || 'unknown');
+        }
+      });
+
+      document.getElementById('btn-toggle-venue').addEventListener('click', async function() {
+        const venueId = document.getElementById('toggle-venue-id').value.trim();
+        const active = document.getElementById('toggle-venue-active').checked;
+        if (!contract || !signer) { showMsg('toggle-msg', 'Connect wallet and attach contract.', 'err'); return; }
+        if (!venueId) { showMsg('toggle-msg', 'Enter venue ID.', 'err'); return; }
+        try {
+          const tx = await contract.setVenueActive(venueId, active);
+          showMsg('toggle-msg', 'Tx: ' + tx.hash, 'info');
+          await tx.wait();
+          showMsg('toggle-msg', 'Venue active state updated.', 'ok');
+          loadVenues();
