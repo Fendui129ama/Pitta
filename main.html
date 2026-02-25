@@ -144,3 +144,76 @@
       font-size: 0.9rem;
     }
     .list li:last-child { border-bottom: none; }
+    .list .mono { font-family: var(--mono); font-size: 0.8rem; color: var(--text-dim); }
+    .help-box { background: var(--bg-elev); border: 1px solid var(--border); border-radius: var(--radius); padding: 0.85rem; font-size: 0.85rem; color: var(--text-dim); margin-bottom: 1rem; }
+    .help-box strong { color: var(--accent); }
+    .empty-state { text-align: center; padding: 2rem; color: var(--text-dim); font-size: 0.95rem; }
+    pre { font-family: var(--mono); }
+    code { font-family: var(--mono); font-size: 0.8em; background: var(--bg-elev); padding: 0.15rem 0.35rem; border-radius: 4px; color: var(--accent); }
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    @media (max-width: 768px) { .grid-2 { grid-template-columns: 1fr; } }
+    .card-note { border-left: 3px solid var(--accent); }
+    .card-warning { border-left: 3px solid var(--red); }
+    .btn:focus-visible, .tab:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+    @media print {
+      .stats, .tabs, .btn, .header-right input.contract, .header-right .addr, #wallet-addr, [id^="btn-"] { display: none !important; }
+      body { background: #fff; color: #111; }
+      .card { border-color: #ccc; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div>
+        <div class="logo">Pitta</div>
+        <p class="tagline">Trading aggregator · FireTrader</p>
+      </div>
+      <div class="header-right">
+        <input type="text" id="contract-address" class="contract" placeholder="FireTrader contract 0x..." />
+        <button type="button" class="btn small" id="btn-attach">Attach</button>
+        <span class="addr" id="wallet-addr">—</span>
+        <button type="button" class="btn primary" id="btn-connect">Connect wallet</button>
+      </div>
+    </header>
+
+    <div class="stats" id="stats-bar" style="display:none;">
+      <span>Venues: <strong id="stat-venues">0</strong></span>
+      <span>Fee: <strong id="stat-fee">—</strong> bps</span>
+      <span>Paused: <strong id="stat-paused">—</strong></span>
+    </div>
+    <p class="help-box" id="stats-desc" style="display:none; margin-top:0; margin-bottom:1rem;">Stats bar shows total registered venues, current fee in basis points, and whether the aggregator is paused. Visible after attaching a contract.</p>
+
+    <div class="tabs">
+      <button type="button" class="tab active" data-tab="venues">Venues</button>
+      <button type="button" class="tab" data-tab="route">Route trade</button>
+      <button type="button" class="tab" data-tab="lookup">Lookup route</button>
+      <button type="button" class="tab" data-tab="fees">Fees</button>
+      <button type="button" class="tab" data-tab="config">Config</button>
+    </div>
+
+    <div id="panel-venues" class="panel visible">
+      <div class="card" style="margin-bottom:1rem;">
+        <p style="font-size:0.9rem; color:var(--text-dim); margin-bottom:0.5rem;">Pitta is the web interface for <strong>FireTrader</strong>, a trading aggregator. Register venues (target contracts), then route trades by sending ETH and calldata. Fees are split between treasury and fee collector.</p>
+        <p style="font-size:0.85rem; color:var(--text-dim); margin-bottom:0.5rem;"><strong>Venues</strong>: list all venues, register one (owner), toggle active (owner), batch register (owner), load active venue IDs. <strong>Route trade</strong>: choose venue, set min out, paste payload hex, send ETH. <strong>Lookup</strong>: route by ID or venue by ID. <strong>Fees</strong>: view accumulated fees, sweep as treasury or fee collector. <strong>Config</strong>: config, constants, about, glossary, aggregate stats, quick reference, caveats, FAQ.</p>
+        <h4>Quick start</h4>
+        <p style="font-size:0.85rem; color:var(--text-dim);">1. Paste the FireTrader contract address and click Attach. 2. Click Connect wallet and approve the connection. 3. In Venues, check that your target venue exists and is active. 4. In Route trade, enter venue ID, min out (or 0), payload hex, and value in wei. 5. Click Estimate fee then Route trade and confirm in your wallet.</p>
+      </div>
+      <div class="card">
+        <h3>Registered venues</h3>
+        <div class="help-box">Venues are target contracts (e.g. DEX or order book). Only owner can register. Route trades send (value − fee) to the venue with your payload. Inactive venues are hidden from routing.</div>
+        <div class="actions">
+          <button type="button" class="btn small" id="btn-refresh-venues">Refresh</button>
+        </div>
+        <ul class="list" id="venues-list"></ul>
+        <div class="empty-state" id="venues-empty" style="display:none;">No venues or contract not attached.</div>
+        <h4 style="margin-top:1rem;">Active venue IDs only</h4>
+        <p style="font-size:0.85rem; color:var(--text-dim); margin-bottom:0.5rem;">List of venue IDs that are currently active (can be used for routing).</p>
+        <div class="actions">
+          <button type="button" class="btn small" id="btn-active-venues">Load active venue IDs</button>
+        </div>
+        <pre id="active-venues-out" style="font-size:0.85rem; font-family:var(--mono); color:var(--text-dim); margin-top:0.5rem;"></pre>
+      </div>
+      <div class="row">
+        <div class="card">
+          <h4>Register venue (owner only)</h4>
