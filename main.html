@@ -728,3 +728,76 @@
           showMsg('route-msg', 'Tx: ' + tx.hash, 'info');
           await tx.wait();
           showMsg('route-msg', 'Trade routed.', 'ok');
+          loadStats();
+          loadVenues();
+        } catch (e) {
+          showMsg('route-msg', e.message || 'Route failed.', 'err');
+        }
+      });
+
+      document.getElementById('btn-estimate-fee').addEventListener('click', async function() {
+        const out = document.getElementById('estimate-out');
+        const valueInput = document.getElementById('route-value').value.trim();
+        if (!contract || !valueInput) { out.textContent = 'Attach contract and enter value.'; return; }
+        try {
+          const valueWei = valueInput.includes('.') || /^\d+$/.test(valueInput) ? ethers.parseEther(valueInput) : BigInt(valueInput);
+          const fee = await contract.computeFeeForAmount(valueWei.toString());
+          out.textContent = 'Fee: ' + ethers.formatEther(fee) + ' ETH\nNet to venue: ' + ethers.formatEther(valueWei - fee) + ' ETH';
+        } catch (e) {
+          out.textContent = 'Error: ' + (e.message || 'unknown');
+        }
+      });
+
+      document.getElementById('btn-load-fees').addEventListener('click', async function() {
+        const detail = document.getElementById('fees-detail');
+        if (!contract) { detail.textContent = 'Attach contract first.'; return; }
+        try {
+          const [treasuryFee, collectorFee] = await Promise.all([contract.getFeeTreasuryAccum(), contract.getFeeCollectorAccum()]);
+          detail.textContent = 'Treasury: ' + ethers.formatEther(treasuryFee) + ' ETH\nFee collector: ' + ethers.formatEther(collectorFee) + ' ETH';
+        } catch (e) {
+          detail.textContent = 'Error: ' + (e.message || 'unknown');
+        }
+      });
+
+      document.getElementById('btn-sweep-treasury').addEventListener('click', async function() {
+        const msgEl = document.getElementById('sweep-msg');
+        msgEl.style.display = 'none';
+        if (!contract || !signer) { msgEl.textContent = 'Connect wallet and attach contract.'; msgEl.className = 'msg err'; msgEl.style.display = 'block'; return; }
+        try {
+          const tx = await contract.sweepTreasuryFees();
+          msgEl.textContent = 'Tx: ' + tx.hash; msgEl.className = 'msg info'; msgEl.style.display = 'block';
+          await tx.wait();
+          msgEl.textContent = 'Treasury fees swept.'; msgEl.className = 'msg ok';
+          document.getElementById('btn-load-fees').click();
+        } catch (e) {
+          msgEl.textContent = e.message || 'Sweep failed (must be treasury).'; msgEl.className = 'msg err'; msgEl.style.display = 'block';
+        }
+      });
+
+      document.getElementById('btn-sweep-collector').addEventListener('click', async function() {
+        const msgEl = document.getElementById('sweep-msg');
+        msgEl.style.display = 'none';
+        if (!contract || !signer) { msgEl.textContent = 'Connect wallet and attach contract.'; msgEl.className = 'msg err'; msgEl.style.display = 'block'; return; }
+        try {
+          const tx = await contract.sweepCollectorFees();
+          msgEl.textContent = 'Tx: ' + tx.hash; msgEl.className = 'msg info'; msgEl.style.display = 'block';
+          await tx.wait();
+          msgEl.textContent = 'Fee collector fees swept.'; msgEl.className = 'msg ok';
+          document.getElementById('btn-load-fees').click();
+        } catch (e) {
+          msgEl.textContent = e.message || 'Sweep failed (must be fee collector).'; msgEl.className = 'msg err'; msgEl.style.display = 'block';
+        }
+      });
+
+      document.getElementById('btn-load-config').addEventListener('click', async function() {
+        const detail = document.getElementById('config-detail');
+        if (!contract) { detail.textContent = 'Attach contract first.'; return; }
+        try {
+          const cfg = await contract.getConfig();
+          detail.textContent = 'Treasury: ' + cfg[0] + '\nFee collector: ' + cfg[1] + '\nKeeper: ' + cfg[2] + '\nFee bps: ' + cfg[3] + '\nDeployed block: ' + cfg[4] + '\nPaused: ' + cfg[5];
+        } catch (e) {
+          detail.textContent = 'Error: ' + (e.message || 'unknown');
+        }
+      });
+
+      document.getElementById('btn-batch-register').addEventListener('click', async function() {
