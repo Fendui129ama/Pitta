@@ -290,3 +290,76 @@
         <p style="font-size:0.85rem; color:var(--text-dim); margin-bottom:0.5rem;">1. User sends ETH + payload to FireTrader.routeTrade(venueId, minOut, payload). 2. Contract computes fee = value × feeBps / 10000 and splits it (treasury + fee collector). 3. Contract forwards (value − fee) to the venue via a low-level call with payload. 4. Venue executes (e.g. swap); optional return value is treated as amount out. 5. If minOut &gt; 0 and venue returns a value, contract reverts when return &lt; minOut. 6. Route ID and snapshot are stored and emitted.</p>
       </div>
       <div class="card">
+        <h4>Example: building a payload</h4>
+        <p style="font-size:0.85rem; color:var(--text-dim); margin-bottom:0.5rem;">Suppose the venue has a function <code>swapExactEthForTokens(uint256 minOut) returns (uint256 amountOut)</code>. The selector is the first 4 bytes of keccak256("swapExactEthForTokens(uint256)"). You would ABI-encode minOut and prepend the selector to get the payload. In JavaScript with ethers: <code>const iface = new ethers.Interface(["function swapExactEthForTokens(uint256) returns (uint256)"]); const payload = iface.encodeFunctionData("swapExactEthForTokens", [minOut]);</code>. Paste the resulting hex (0x...) into the Payload field. The venue will receive (your value − fee) as msg.value.</p>
+      </div>
+    </div>
+
+    <div id="panel-lookup" class="panel">
+      <div class="help-box" style="margin-bottom:1rem;">
+        Route IDs are bytes32 values emitted in the TradeRouted event when you call routeTrade. Venue IDs are sequential (1, 2, 3, …) assigned when venues are registered. Use a block explorer to find the routeId from your transaction logs if you did not save it.
+      </div>
+      <div class="grid-2">
+        <div class="card">
+          <h3>Lookup route by ID</h3>
+          <p style="font-size:0.85rem; color:var(--text-dim); margin-bottom:0.5rem;">Route ID is emitted in TradeRouted. Enter the bytes32 hex (0x + 64 hex chars) to see user, venue, amounts, fee.</p>
+          <label>Route ID (bytes32 hex)</label>
+          <input type="text" id="lookup-route-id" class="input" placeholder="0x..." />
+          <div class="actions">
+            <button type="button" class="btn small" id="btn-lookup-route">Lookup</button>
+          </div>
+          <pre id="lookup-route-out" style="font-size:0.85rem; font-family:var(--mono); color:var(--text-dim); margin-top:0.75rem; white-space:pre-wrap; word-break:break-all;"></pre>
+        </div>
+        <div class="card">
+          <h4>Lookup venue by ID</h4>
+          <p style="font-size:0.85rem; color:var(--text-dim); margin-bottom:0.5rem;">Get full venue view: target, label, registered block, active, trade count, volume.</p>
+          <label>Venue ID</label>
+          <input type="number" id="lookup-venue-id" class="input" min="1" placeholder="1" />
+          <div class="actions">
+            <button type="button" class="btn small" id="btn-lookup-venue">Lookup venue</button>
+          </div>
+          <pre id="lookup-venue-out" style="font-size:0.85rem; font-family:var(--mono); color:var(--text-dim); margin-top:0.75rem; white-space:pre-wrap; word-break:break-all;"></pre>
+        </div>
+      </div>
+    </div>
+
+    <div id="panel-fees" class="panel">
+      <div class="card" style="margin-bottom:1rem;">
+        <p style="font-size:0.85rem; color:var(--text-dim); margin-bottom:0.5rem;">Every routed trade pays a fee (value × feeBps / 10000). Half is credited to the treasury balance and half to the fee collector. Only those two addresses can sweep their respective accumulated balance. Load fees to see current totals.</p>
+        <p style="font-size:0.85rem; color:var(--text-dim);"><strong>Who can sweep:</strong> sweepTreasuryFees() can only be called by the treasury address; sweepCollectorFees() only by the fee collector. If you are not one of these, the buttons will revert on-chain. Connect with the correct wallet to sweep.</p>
+      </div>
+      <div class="row">
+        <div class="card">
+          <h3>Accumulated fees</h3>
+          <p style="font-size:0.85rem; color:var(--text-dim); margin-bottom:0.5rem;">Treasury and fee collector each accumulate half of the route fee. Sweep to withdraw to your wallet (must be treasury or fee collector).</p>
+          <div class="actions">
+            <button type="button" class="btn small" id="btn-load-fees">Load fees</button>
+          </div>
+          <pre id="fees-detail" style="font-size:0.85rem; font-family:var(--mono); color:var(--text-dim); margin-top:0.75rem; white-space:pre-wrap; word-break:break-all;"></pre>
+        </div>
+        <div class="card">
+          <h4>Sweep (treasury / fee collector only)</h4>
+          <p style="font-size:0.85rem; color:var(--text-dim); margin-bottom:0.5rem;">Connect as treasury or fee collector address and click the matching button.</p>
+          <div class="actions">
+            <button type="button" class="btn small" id="btn-sweep-treasury">Sweep treasury</button>
+            <button type="button" class="btn small" id="btn-sweep-collector">Sweep fee collector</button>
+          </div>
+          <div id="sweep-msg"></div>
+        </div>
+      </div>
+    </div>
+
+    <div id="panel-config" class="panel">
+      <div class="card">
+        <h3>Contract config</h3>
+        <p style="margin-bottom:0.5rem; font-size:0.85rem; color:var(--text-dim);">FireTrader immutable addresses and runtime config. Treasury and fee collector are set at deploy and cannot change. Fee bps and paused state can be updated by owner and aggregator keeper respectively.</p>
+        <p style="margin-bottom:0.75rem; font-size:0.8rem; color:var(--text-dim);">Load config shows: treasury_, feeCollector_, aggregatorKeeper_, feeBps_, deployedBlock_, aggregatorPaused_.</p>
+        <div class="actions">
+          <button type="button" class="btn small" id="btn-load-config">Load config</button>
+          <button type="button" class="btn small" id="btn-load-constants">Load constants</button>
+        </div>
+        <pre id="config-detail" style="font-size:0.8rem; font-family:var(--mono); color:var(--text-dim); white-space:pre-wrap; word-break:break-all; margin-top:0.75rem;"></pre>
+      </div>
+      <div class="card">
+        <h4>Contract constants</h4>
+        <pre id="constants-out" style="font-size:0.85rem; font-family:var(--mono); color:var(--text-dim); margin-top:0.5rem;"></pre>
