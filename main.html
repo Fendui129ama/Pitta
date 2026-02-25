@@ -363,3 +363,76 @@
       <div class="card">
         <h4>Contract constants</h4>
         <pre id="constants-out" style="font-size:0.85rem; font-family:var(--mono); color:var(--text-dim); margin-top:0.5rem;"></pre>
+      </div>
+      <div class="card">
+        <h4>About FireTrader</h4>
+        <p style="font-size:0.85rem; color:var(--text-dim); margin-bottom:0.5rem;">FireTrader aggregates trades across venues. Owner registers target contracts (venues). Users route trades by sending ETH and calldata; the contract deducts a fee and forwards the rest to the chosen venue. Fees are split between treasury and fee collector.</p>
+        <p style="font-size:0.85rem; color:var(--text-dim);">Payload is the hex-encoded call to the venue contract (e.g. swap selector + encoded args). The venue receives (msg.value − fee) and can return a uint256 (e.g. amount out). Min out is checked only if the venue returns a value.</p>
+      </div>
+      <div class="card">
+        <h4>Glossary</h4>
+        <p style="font-size:0.85rem; color:var(--text-dim); margin-bottom:0.4rem;"><strong>Venue:</strong> A registered target contract (e.g. DEX, order book). Each venue has an ID, target address, optional label hash, and active flag.</p>
+        <p style="font-size:0.85rem; color:var(--text-dim); margin-bottom:0.4rem;"><strong>Route:</strong> A single trade execution through one venue. Each route has a unique routeId (bytes32), user, venueId, amount in/out, fee, and block number.</p>
+        <p style="font-size:0.85rem; color:var(--text-dim); margin-bottom:0.4rem;"><strong>Fee bps:</strong> Fee in basis points; 10000 = 100%. Example: 30 bps = 0.3%. Fee is (value × feeBps) / 10000, split 50/50 between treasury and fee collector.</p>
+        <p style="font-size:0.85rem; color:var(--text-dim); margin-bottom:0.4rem;"><strong>Treasury:</strong> Immutable address that receives half of routing fees. Only this address can call sweepTreasuryFees().</p>
+        <p style="font-size:0.85rem; color:var(--text-dim); margin-bottom:0.4rem;"><strong>Fee collector:</strong> Immutable address that receives the other half of fees. Only this address can call sweepCollectorFees().</p>
+        <p style="font-size:0.85rem; color:var(--text-dim); margin-bottom:0.4rem;"><strong>Payload:</strong> Hex calldata forwarded to the venue. Typically a function selector plus ABI-encoded arguments. The venue receives (value − fee) as msg.value.</p>
+        <p style="font-size:0.85rem; color:var(--text-dim);"><strong>Min out:</strong> Optional minimum amount (wei) the venue must return. Enforced only when minOutWei &gt; 0 and the venue returns a uint256.</p>
+      </div>
+      <div class="card">
+        <h4>Aggregate stats</h4>
+        <p style="font-size:0.85rem; color:var(--text-dim); margin-bottom:0.5rem;">Total volume and total trades across all venues (read from contract).</p>
+        <div class="actions">
+          <button type="button" class="btn small" id="btn-aggregate-stats">Load aggregate stats</button>
+        </div>
+        <pre id="aggregate-stats-out" style="font-size:0.85rem; font-family:var(--mono); color:var(--text-dim); margin-top:0.5rem;"></pre>
+      </div>
+      <div class="card">
+        <h4>Quick reference</h4>
+        <p style="font-size:0.85rem; color:var(--text-dim); margin-bottom:0.5rem;">Fee = value × feeBps / 10000. Net to venue = value − fee. Max fee bps is 300. Max venues 64. Payload must be valid calldata for the venue (e.g. swap function selector + ABI-encoded args). Min out is only enforced if the venue returns a uint256.</p>
+      </div>
+      <div class="card">
+        <h4>Caveats</h4>
+        <p style="font-size:0.85rem; color:var(--text-dim);">Routing sends ETH and arbitrary calldata to the venue. Only register trusted venue contracts. The venue can revert (e.g. slippage); then the whole routeTrade tx reverts. Owner can pause the aggregator. Treasury and fee collector addresses are immutable at deploy.</p>
+      </div>
+      <div class="card">
+        <h4>Constants reference</h4>
+        <p style="font-size:0.85rem; color:var(--text-dim); margin-bottom:0.5rem;"><strong>BPS base</strong> (10000): basis points denominator. Fee bps is in percent × 100 (e.g. 10 = 0.1%). <strong>Max fee bps</strong> (300): owner cannot set fee above 3%. <strong>Max venues</strong> (64): maximum number of registered venues. <strong>Max batch quote</strong> (16): maximum venues per batch register.</p>
+      </div>
+      <div class="card">
+        <h4>FAQ</h4>
+        <p style="font-size:0.85rem; color:var(--text-dim); margin-bottom:0.5rem;"><strong>Who can register venues?</strong> Only the contract owner. <strong>Who can sweep fees?</strong> Only the treasury address (sweep treasury) or the fee collector address (sweep fee collector). <strong>What if the venue reverts?</strong> The entire routeTrade transaction reverts and no fee is taken. <strong>Can I route to an inactive venue?</strong> No; the contract reverts with FTR_VenueInactive. <strong>Is there a minimum or maximum trade size?</strong> The contract does not enforce min/max; the venue may.</p>
+      </div>
+      <div class="card">
+        <h4>Contract events</h4>
+        <p style="font-size:0.85rem; color:var(--text-dim);">FireTrader emits <strong>VenueRegistered</strong> (venueId, target, labelHash), <strong>VenueToggled</strong> (venueId, active), <strong>TradeRouted</strong> (routeId, user, venueId, amountIn, amountOut, feeWei), <strong>FeeSwept</strong> (to, amount, kind), <strong>AggregatorPauseToggled</strong>, <strong>FeeBpsUpdated</strong>, <strong>RouteIdRecorded</strong>. Use these in indexers or to look up route IDs from tx logs.</p>
+      </div>
+      <div class="card">
+        <h4>Testing a route</h4>
+        <p style="font-size:0.85rem; color:var(--text-dim); margin-bottom:0.5rem;">1. Attach the FireTrader contract and connect your wallet. 2. In Venues, confirm the venue you want is listed and active. 3. In Route trade, enter the venue ID. 4. Set min amount out (0 to skip check). 5. Build the payload for your venue (e.g. swap calldata). 6. Enter the ETH amount to send. 7. Click Estimate fee to see fee and net. 8. Click Route trade and confirm the transaction. 9. Use the tx receipt or event logs to get the route ID for lookup.</p>
+      </div>
+      <div class="card">
+        <h4>Security and mainnet</h4>
+        <p style="font-size:0.85rem; color:var(--text-dim); margin-bottom:0.5rem;">FireTrader is designed for mainnet: treasury and fee collector are immutable; only they can sweep their respective fees. The aggregator keeper can pause; the owner can set fee bps (capped) and register or toggle venues. Always verify the contract address on-chain and that you are interacting with the correct chain. Pitta does not hold keys; signing happens in your wallet. Double-check payload and value before routing; a wrong venue or payload can send funds to an unintended contract.</p>
+      </div>
+      <div class="card">
+        <h4>Error codes (reverts)</h4>
+        <p style="font-size:0.85rem; color:var(--text-dim);">FTR_ZeroTarget, FTR_VenueIdInvalid, FTR_VenueInactive, FTR_AggregatorPaused, FTR_ZeroValue, FTR_MaxVenuesReached, FTR_BatchLengthMismatch, FTR_BatchTooLarge, FTR_FeeBpsTooHigh, FTR_MinOutNotMet, FTR_NotTreasury, FTR_NotFeeCollector. These help you debug failed transactions when the UI shows the revert reason.</p>
+      </div>
+      <div class="card">
+        <h4>Term reference</h4>
+        <p style="font-size:0.8rem; color:var(--text-dim); margin-bottom:0.25rem;">venueId: uint256 index of a registered venue. routeId: bytes32 unique id for a route (from event or getRouteSnapshot). target: the contract address that receives the routed value and payload. labelHash: optional bytes32 label for a venue. feeBps: basis points for fee (owner-set, max 300). aggregatorPaused: if true, routeTrade reverts. deployedBlock: block number at deploy. aggregatorKeeper: address that can pause. treasury / feeCollector: immutable fee recipients. getVenueView: returns full venue struct (id, target, labelHash, block, active, tradeCount, volumeWei). getRouteSnapshot: returns route details by routeId. totalVolumeAcrossVenues / totalTradesAcrossVenues: contract-wide stats.</p>
+      </div>
+      <div class="card card-note">
+        <h4>Chain and network</h4>
+        <p style="font-size:0.85rem; color:var(--text-dim); margin-bottom:0.5rem;">Pitta works on any EVM chain where FireTrader is deployed. Ensure your wallet is connected to the correct network (e.g. Ethereum mainnet, or the same chain as the contract). The contract address is the same across chains only if the contract was deployed to each chain; verify the address on a block explorer for your chain. All amounts in the UI are in wei (or native token units) unless stated otherwise.</p>
+      </div>
+      <div class="card">
+        <h4>Payload examples (conceptual)</h4>
+        <p style="font-size:0.85rem; color:var(--text-dim); margin-bottom:0.4rem;">Swap exact ETH for tokens: selector for swapExactEthForTokens(minOut) + ABI-encoded minOut. Swap for exact tokens: selector for swapEthForExactTokens(amountOut, path) + encoded args. Generic call: any public/external function selector + encoded parameters. The venue receives msg.value = (your value − fee). Payload must be valid for the venue contract; wrong payload can revert or send funds incorrectly.</p>
+      </div>
+      <div class="card">
+        <h4>Keyboard and accessibility</h4>
+        <p style="font-size:0.85rem; color:var(--text-dim);">Use Tab to move between inputs and buttons. Enter submits forms where applicable. Focused elements show an accent outline. For route ID lookup, paste the full bytes32 hex (0x + 64 hex chars). Venue IDs are numbers; min out and value are wei (integers).</p>
+      </div>
+      <div class="card card-warning">
