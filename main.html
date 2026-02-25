@@ -436,3 +436,149 @@
         <p style="font-size:0.85rem; color:var(--text-dim);">Use Tab to move between inputs and buttons. Enter submits forms where applicable. Focused elements show an accent outline. For route ID lookup, paste the full bytes32 hex (0x + 64 hex chars). Venue IDs are numbers; min out and value are wei (integers).</p>
       </div>
       <div class="card card-warning">
+        <h4>Troubleshooting</h4>
+        <p style="font-size:0.85rem; color:var(--text-dim); margin-bottom:0.4rem;">Transaction reverted with FTR_VenueInactive: the venue is toggled off; use an active venue or ask the owner to set it active. FTR_MinOutNotMet: the venue returned less than your min out; increase slippage (lower min out) or try again. FTR_AggregatorPaused: the aggregator is paused; wait until the keeper unpauses. FTR_ZeroValue: you sent 0 wei; add value. Invalid contract address: ensure the FireTrader address is correct and includes 0x. No Ethereum provider: install MetaMask or another Web3 wallet and refresh.</p>
+      </div>
+      <div class="card">
+        <h4>Links and resources</h4>
+        <p style="font-size:0.85rem; color:var(--text-dim);">Verify the FireTrader contract on your chain’s block explorer (Etherscan, etc.) before attaching. Use the explorer to read contract state (venues, config) and to inspect events (TradeRouted, VenueRegistered). For payload construction, use ethers.Interface or your DEX SDK to encode the venue’s function call. Keep a copy of the contract ABI if you integrate programmatically.</p>
+      </div>
+      <div class="card">
+        <h4>Data formats</h4>
+        <p style="font-size:0.8rem; color:var(--text-dim); margin-bottom:0.3rem;">Address: 0x followed by 40 hex chars (20 bytes). Bytes32: 0x + 64 hex chars. Venue ID: integer (1 to max venues). Route ID: bytes32 hex from event. Value / min out / wei: integer string, no decimals. Payload: 0x + hex-encoded calldata (selector + ABI-encoded args). Label hash for register: bytes32; use 0x0 or keccak256 of label string.</p>
+      </div>
+      <div class="card">
+        <h4>Integrating with Pitta</h4>
+        <p style="font-size:0.85rem; color:var(--text-dim); margin-bottom:0.4rem;">Pitta is a single HTML file; you can host it anywhere or run locally. To integrate your app with FireTrader, use the same ABI (see script section) and call the contract with ethers.js or web3.js. For routeTrade, encode the payload with your venue’s interface, pass venueId and minOutWei, and send the transaction with value. Listen for TradeRouted events to get routeId and amountOutWei. For read-only data (venues, config, fees), use the view functions without a signer.</p>
+        <p style="font-size:0.85rem; color:var(--text-dim);">Ensure your provider (or wallet) is on the same chain as the deployed FireTrader contract. Chain ID can be read via provider.getNetwork().</p>
+      </div>
+      <div class="card">
+        <h4>Browser support</h4>
+        <p style="font-size:0.85rem; color:var(--text-dim);">Pitta requires a modern browser with JavaScript enabled and an injected Ethereum provider (e.g. MetaMask). The UI uses standard DOM, CSS, and ethers v6. No build step; open the HTML file or serve it over HTTP/HTTPS. For production, serve over HTTPS and ensure users connect to the correct network.</p>
+      </div>
+      <div class="card card-warning">
+        <h4>Disclaimer</h4>
+        <p style="font-size:0.85rem; color:var(--text-dim); margin-bottom:0.4rem;">Pitta is a front-end interface only; it does not hold funds or private keys. All transactions are signed in your wallet. FireTrader contract behaviour (fees, venues, routing) is determined by the on-chain contract. Always verify the contract address and source code on a block explorer. Use at your own risk; the authors are not liable for loss of funds due to misuse, wrong payload, or contract bugs.</p>
+      </div>
+      <div class="card">
+        <h4>Venue lifecycle</h4>
+        <p style="font-size:0.85rem; color:var(--text-dim);">Owner registers a venue with registerVenue(target, labelHash); it receives the next venue ID and is active by default. Owner can setVenueActive(venueId, false) to disable routing to that venue, or true to re-enable. Volume and trade count for the venue accumulate with each routeTrade. Venues cannot be unregistered; deactivate instead if a target is deprecated.</p>
+      </div>
+      <div class="card">
+        <h4>Fee flow</h4>
+        <p style="font-size:0.85rem; color:var(--text-dim); margin-bottom:0.4rem;">On each routeTrade, the contract computes fee = (msg.value × feeBps) / 10000. Half is added to the treasury accumulator and half to the fee collector accumulator. The contract forwards (msg.value − fee) to the venue. Treasury and fee collector do not receive ETH automatically; they must call sweepTreasuryFees() and sweepCollectorFees() to transfer their accumulated balance to themselves.</p>
+      </div>
+      <div class="card">
+        <h4>Pitta and FireTrader</h4>
+        <p style="font-size:0.85rem; color:var(--text-dim); margin-bottom:0.4rem;">Pitta is the companion UI for the FireTrader on-chain trading aggregator. FireTrader is a single contract that holds no custody of user funds beyond the fee split on each trade. Pitta provides forms and read-only views for all main operations; for automation or integration, use the same contract ABI and your own front-end or scripts.</p>
+        <p style="font-size:0.85rem; color:var(--text-dim);">Contract addresses and hex values in FireTrader (treasury, fee collector, keeper, domain salt) are set at deployment and are immutable. Do not reuse the same addresses for other deployments.</p>
+      </div>
+      <div class="card card-note">
+        <h4>Summary</h4>
+        <p style="font-size:0.85rem; color:var(--text-dim); margin-bottom:0.4rem;">Attach contract → Connect wallet → Venues: list/register/toggle → Route trade: venue ID + payload + value → Lookup: route or venue by ID → Fees: load and sweep (as treasury or collector) → Config: load config and constants, read docs.</p>
+        <p style="font-size:0.8rem; color:var(--text-dim);">All actions that change state (register, toggle, route, sweep) require a connected wallet and sufficient gas. Read-only actions work with contract attached and provider (no signer needed for view calls).</p>
+      </div>
+    </div>
+  </div>
+  <footer style="margin-top:2rem; padding-top:1rem; border-top:1px solid var(--border); font-size:0.8rem; color:var(--text-dim); text-align:center; max-width:60em; margin-left:auto; margin-right:auto;">
+    <p>Pitta — Trading aggregator UI for FireTrader. Connect wallet, attach FireTrader contract. Venues: list venues, register (owner), toggle active (owner), batch register (owner). Route trade: send ETH + payload to a venue; estimate fee before sending. Lookup: route by ID or venue by ID. Fees: load accumulated fees, sweep as treasury or fee collector. Config: view config, load constants (BPS base, max fee bps, max venues, max batch), glossary, aggregate stats, quick reference. All amounts in native ETH (or chain equivalent).</p>
+    <p style="margin-top:0.5rem;">UI version: single-file Pitta for FireTrader. Use on EVM mainnets only with verified contract addresses.</p>
+  </footer>
+
+  <script>
+    /**
+     * Pitta — FireTrader web UI
+     * Uses ethers v6 to connect wallet and call FireTrader contract.
+     * Contract must be attached (address) before most actions.
+     * Venues tab: getVenueIds, getVenue, getVenueTradeCount, getVenueVolumeWei; registerVenue, setVenueActive, registerVenuesBatch (owner); getActiveVenueIds.
+     * Route trade: routeTrade(venueId, minOutWei, payload) with value; computeFeeForAmount for estimate.
+     * Lookup: getRouteSnapshot(routeId), getVenueView(venueId).
+     * Fees: getFeeTreasuryAccum, getFeeCollectorAccum; sweepTreasuryFees, sweepCollectorFees (callable only by treasury / fee collector).
+     * Config: getConfig, getConstants; aggregate: totalVolumeAcrossVenues, totalTradesAcrossVenues.
+     * All numeric inputs (venue ID, min out, value) are in wei or integer; payload is 0x-prefixed hex.
+     */
+    (function() {
+      // DOM refs
+      const contractInput = document.getElementById('contract-address');
+      const walletAddrEl = document.getElementById('wallet-addr');
+      const btnConnect = document.getElementById('btn-connect');
+      const btnAttach = document.getElementById('btn-attach');
+      const statsBar = document.getElementById('stats-bar');
+
+      // Provider, signer, contract ref; contractAddress persisted for re-attach after connect
+      let provider = null;
+      let signer = null;
+      let contract = null;
+      let contractAddress = '';
+
+      const ABI = [
+        'function getVenueIds() view returns (uint256[])',
+        'function getVenue(uint256 venueId) view returns (address target, bytes32 labelHash, uint256 registeredAtBlock, bool active)',
+        'function getVenueTradeCount(uint256 venueId) view returns (uint256)',
+        'function getVenueVolumeWei(uint256 venueId) view returns (uint256)',
+        'function routeTrade(uint256 venueId, uint256 minOutWei, bytes payload) payable returns (bytes32 routeId, uint256 amountOutWei)',
+        'function registerVenue(address target, bytes32 labelHash) returns (uint256)',
+        'function setVenueActive(uint256 venueId, bool active)',
+        'function getConfig() view returns (address treasury_, address feeCollector_, address aggregatorKeeper_, uint256 feeBps_, uint256 deployedBlock_, bool aggregatorPaused_)',
+        'function getFeeTreasuryAccum() view returns (uint256)',
+        'function getFeeCollectorAccum() view returns (uint256)',
+        'function sweepTreasuryFees()',
+        'function sweepCollectorFees()',
+        'function computeFeeForAmount(uint256 amountWei) view returns (uint256)',
+        'function getActiveVenueIds() view returns (uint256[])',
+        'function getRouteSnapshot(bytes32 routeId) view returns (address user, uint256 venueId, uint256 amountInWei, uint256 amountOutWei, uint256 feeWei, uint256 atBlock)',
+        'function totalVolumeAcrossVenues() view returns (uint256)',
+        'function totalTradesAcrossVenues() view returns (uint256)',
+        'function getVenueView(uint256 venueId) view returns (tuple(uint256 venueId, address target, bytes32 labelHash, uint256 registeredAtBlock, bool active, uint256 tradeCount, uint256 volumeWei))',
+        'function registerVenuesBatch(address[] targets, bytes32[] labelHashes) returns (uint256[] venueIds)',
+        'function getConstants() view returns (uint256 bpsBase, uint256 maxFeeBps, uint256 maxVenues, uint256 maxBatchQuote)'
+      ];
+      // ABI usage: getVenueIds lists all venue IDs. getVenue(venueId) returns target, labelHash, registeredAtBlock, active. getVenueView(venueId) returns full struct.
+      // getVenueTradeCount(venueId) / getVenueVolumeWei(venueId) for per-venue stats. routeTrade(venueId, minOutWei, payload) payable.
+      // registerVenue(target, labelHash) and setVenueActive(venueId, active) are owner-only. getConfig returns treasury, feeCollector, keeper, feeBps, deployedBlock, paused.
+      // getFeeTreasuryAccum / getFeeCollectorAccum are the accumulated fees. sweepTreasuryFees / sweepCollectorFees transfer to treasury / collector.
+      // computeFeeForAmount(amountWei) returns fee for a given value. getActiveVenueIds returns IDs of active venues only.
+      // getRouteSnapshot(routeId) returns user, venueId, amountIn, amountOut, fee, atBlock. totalVolumeAcrossVenues / totalTradesAcrossVenues for global stats.
+      // getVenueView(venueId) returns full struct. registerVenuesBatch(targets, labelHashes) for batch register. getConstants returns bpsBase, maxFeeBps, maxVenues, maxBatchQuote.
+
+      function showMsg(containerId, text, type) {
+        // Display message in given container; type: 'ok' | 'err' | 'info'
+        const el = document.getElementById(containerId);
+        if (!el) return;
+        el.textContent = text;
+        el.className = 'msg ' + (type || 'info');
+        el.style.display = 'block';
+      }
+
+      function hideMsg(containerId) {
+        const el = document.getElementById(containerId);
+        if (el) { el.style.display = 'none'; el.textContent = ''; }
+      }
+
+      async function connectWallet() {
+        try {
+          if (!window.ethereum) { showMsg('route-msg', 'No Ethereum provider.', 'err'); return; }
+          provider = new ethers.BrowserProvider(window.ethereum);
+          const accounts = await provider.send('eth_requestAccounts', []);
+          if (accounts.length === 0) { showMsg('route-msg', 'No account selected.', 'err'); return; }
+          signer = await provider.getSigner();
+          const addr = await signer.getAddress();
+          walletAddrEl.textContent = addr.slice(0, 6) + '…' + addr.slice(-4);
+          walletAddrEl.title = addr;
+          if (contractAddress) attachContract(contractAddress);
+          loadVenues();
+        } catch (e) {
+          showMsg('route-msg', e.message || 'Connect failed.', 'err');
+        }
+      }
+
+      function attachContract(addr) {
+        const a = (addr || contractInput.value || '').trim();
+        if (!ethers.isAddress(a)) { showMsg('route-msg', 'Invalid contract address.', 'err'); return; }
+        contractAddress = a;
+        contractInput.value = a;
+        try {
+          contract = new ethers.Contract(a, ABI, signer || provider);
+          statsBar.style.display = 'flex';
+          const statsDesc = document.getElementById('stats-desc');
+          if (statsDesc) statsDesc.style.display = 'block';
