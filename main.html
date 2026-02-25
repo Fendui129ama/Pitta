@@ -217,3 +217,76 @@
       <div class="row">
         <div class="card">
           <h4>Register venue (owner only)</h4>
+          <label>Target contract address</label>
+          <input type="text" id="venue-target" class="input" placeholder="0x..." />
+          <label>Label hash (bytes32 hex, or leave empty for 0x0)</label>
+          <input type="text" id="venue-label" class="input" placeholder="0x..." />
+          <div class="actions">
+            <button type="button" class="btn primary" id="btn-register-venue">Register</button>
+          </div>
+          <div id="register-msg"></div>
+        </div>
+        <div class="card">
+          <h4>Toggle venue active (owner only)</h4>
+          <p style="font-size:0.85rem; color:var(--text-dim); margin-bottom:0.5rem;">Disable a venue without removing it. Inactive venues cannot be used for routing.</p>
+          <label>Venue ID</label>
+          <input type="number" id="toggle-venue-id" class="input" min="1" placeholder="1" />
+          <label>Active (checked = active)</label>
+          <input type="checkbox" id="toggle-venue-active" checked />
+          <div class="actions">
+            <button type="button" class="btn small" id="btn-toggle-venue">Set active state</button>
+          </div>
+          <div id="toggle-msg"></div>
+        </div>
+      </div>
+      <div class="card">
+        <h4>Batch register venues (owner only)</h4>
+        <p style="font-size:0.85rem; color:var(--text-dim); margin-bottom:0.5rem;">Register multiple venues in one tx. Enter target addresses (one per line or comma-separated). Labels can be one per line or comma-separated; if you provide fewer labels than targets, missing labels are set to 0x0. Max 16 venues per batch. Useful when onboarding several DEX or order-book contracts at once.</p>
+        <label>Target addresses (one per line or comma-separated)</label>
+        <textarea id="batch-targets" class="input" rows="3" placeholder="0x...&#10;0x..."></textarea>
+        <label>Label hashes (one per line or comma; 0x0 or empty for zero)</label>
+        <textarea id="batch-labels" class="input" rows="2" placeholder="0x... or empty"></textarea>
+        <div class="actions">
+          <button type="button" class="btn primary" id="btn-batch-register">Batch register</button>
+        </div>
+        <div id="batch-register-msg"></div>
+      </div>
+    </div>
+
+    <div id="panel-route" class="panel">
+      <div class="help-box" style="margin-bottom:1rem;">
+        <strong>Before you route:</strong> Attach the FireTrader contract and connect your wallet. Confirm the venue is active (Venues tab). Build the payload for the venue (e.g. swap calldata). Enter value in wei; use Estimate fee to see fee and net. Min out is optional; use 0 to skip the check.
+      </div>
+      <div class="row">
+        <div class="card">
+          <h3>Route trade</h3>
+          <div class="help-box">Send ETH to FireTrader; fee is deducted and the rest is forwarded to the venue with your calldata. Payload is the hex-encoded call to the venue (e.g. swap). Min out is optional (0 = no check).</div>
+          <label>Venue ID</label>
+          <input type="number" id="route-venue-id" class="input" min="1" placeholder="1" />
+          <label>Min amount out (wei; 0 = no check)</label>
+          <input type="text" id="route-min-out" class="input" value="0" placeholder="0" />
+          <label>Payload (hex calldata for venue)</label>
+          <input type="text" id="route-payload" class="input" placeholder="0x..." />
+          <label>ETH to send (wei or ETH)</label>
+          <input type="text" id="route-value" class="input" placeholder="0.01" />
+          <div class="actions">
+            <button type="button" class="btn primary" id="btn-route">Route trade</button>
+            <button type="button" class="btn small" id="btn-estimate-fee">Estimate fee</button>
+          </div>
+          <div id="route-msg"></div>
+        </div>
+        <div class="card">
+          <h4>Fee &amp; net</h4>
+          <p style="font-size:0.85rem; color:var(--text-dim); margin-bottom:0.5rem;">Fee is (value × feeBps / 10000). Half to treasury, half to fee collector. Net to venue = value − fee.</p>
+          <div id="estimate-out" style="font-family:var(--mono); font-size:0.85rem; color:var(--text-dim);"></div>
+        </div>
+      </div>
+      <div class="card">
+        <h4>Payload format</h4>
+        <p style="font-size:0.85rem; color:var(--text-dim); margin-bottom:0.5rem;">Payload is the hex-encoded calldata sent to the venue contract. For a simple swap you might use the venue's swap function selector (4 bytes) plus ABI-encoded arguments. Example: <code>0x</code> + selector + abi.encode(args). The venue receives (value − fee) as msg.value. If the venue returns a uint256 it is used as amount out and checked against minOutWei when minOutWei &gt; 0.</p>
+      </div>
+      <div class="card">
+        <h4>Route flow</h4>
+        <p style="font-size:0.85rem; color:var(--text-dim); margin-bottom:0.5rem;">1. User sends ETH + payload to FireTrader.routeTrade(venueId, minOut, payload). 2. Contract computes fee = value × feeBps / 10000 and splits it (treasury + fee collector). 3. Contract forwards (value − fee) to the venue via a low-level call with payload. 4. Venue executes (e.g. swap); optional return value is treated as amount out. 5. If minOut &gt; 0 and venue returns a value, contract reverts when return &lt; minOut. 6. Route ID and snapshot are stored and emitted.</p>
+      </div>
+      <div class="card">
