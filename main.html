@@ -655,3 +655,76 @@
           await tx.wait();
           showMsg('toggle-msg', 'Venue active state updated.', 'ok');
           loadVenues();
+          loadStats();
+        } catch (e) {
+          showMsg('toggle-msg', e.message || 'Toggle failed.', 'err');
+        }
+      });
+
+      document.getElementById('btn-lookup-venue').addEventListener('click', async function() {
+        const venueId = document.getElementById('lookup-venue-id').value.trim();
+        const out = document.getElementById('lookup-venue-out');
+        out.textContent = '';
+        if (!contract) { out.textContent = 'Attach contract first.'; return; }
+        if (!venueId) { out.textContent = 'Enter venue ID.'; return; }
+        try {
+          const v = await contract.getVenueView(venueId);
+          out.textContent = 'Venue ID: ' + v[0] + '\nTarget: ' + v[1] + '\nLabel hash: ' + v[2] + '\nRegistered block: ' + v[3] + '\nActive: ' + v[4] + '\nTrade count: ' + v[5] + '\nVolume wei: ' + v[6];
+        } catch (e) {
+          out.textContent = 'Error: ' + (e.message || 'unknown');
+        }
+      });
+
+      document.getElementById('btn-lookup-route').addEventListener('click', async function() {
+        const routeId = document.getElementById('lookup-route-id').value.trim();
+        const out = document.getElementById('lookup-route-out');
+        out.textContent = '';
+        if (!contract) { out.textContent = 'Attach contract first.'; return; }
+        if (!routeId || !routeId.startsWith('0x') || routeId.length < 66) { out.textContent = 'Enter valid route ID (0x... 66 chars).'; return; }
+        try {
+          const r = await contract.getRouteSnapshot(routeId);
+          out.textContent = 'User: ' + r[0] + '\nVenue ID: ' + r[1] + '\nAmount in: ' + r[2] + ' wei\nAmount out: ' + r[3] + ' wei\nFee: ' + r[4] + ' wei\nBlock: ' + r[5];
+        } catch (e) {
+          out.textContent = 'Error: ' + (e.message || 'unknown');
+        }
+      });
+
+      document.getElementById('btn-register-venue').addEventListener('click', async function() {
+        const target = document.getElementById('venue-target').value.trim();
+        const labelInput = document.getElementById('venue-label').value.trim();
+        if (!contract || !signer) { showMsg('register-msg', 'Connect wallet and attach contract.', 'err'); return; }
+        if (!target || !ethers.isAddress(target)) { showMsg('register-msg', 'Invalid target address.', 'err'); return; }
+        const labelHash = labelInput && labelInput.startsWith('0x') && labelInput.length === 66 ? labelInput : '0x' + '0'.repeat(64);
+        try {
+          const tx = await contract.registerVenue(target, labelHash);
+          showMsg('register-msg', 'Tx: ' + tx.hash, 'info');
+          await tx.wait();
+          showMsg('register-msg', 'Venue registered.', 'ok');
+          loadStats();
+          loadVenues();
+        } catch (e) {
+          showMsg('register-msg', e.message || 'Register failed.', 'err');
+        }
+      });
+
+      document.getElementById('btn-route').addEventListener('click', async function() {
+        hideMsg('route-msg');
+        const venueId = document.getElementById('route-venue-id').value.trim();
+        const minOut = document.getElementById('route-min-out').value.trim() || '0';
+        const payloadRaw = document.getElementById('route-payload').value.trim();
+        const valueInput = document.getElementById('route-value').value.trim();
+        if (!contract || !signer) { showMsg('route-msg', 'Connect wallet and attach contract.', 'err'); return; }
+        if (!venueId || !valueInput) { showMsg('route-msg', 'Fill venue ID and ETH value.', 'err'); return; }
+        let valueWei;
+        try {
+          valueWei = valueInput.includes('.') || /^\d+$/.test(valueInput) ? ethers.parseEther(valueInput) : BigInt(valueInput);
+        } catch (_) {
+          showMsg('route-msg', 'Invalid value.', 'err');
+          return;
+        }
+        const payload = payloadRaw.startsWith('0x') ? payloadRaw : '0x' + payloadRaw;
+        try {
+          const tx = await contract.routeTrade(venueId, minOut, payload, { value: valueWei });
+          showMsg('route-msg', 'Tx: ' + tx.hash, 'info');
+          await tx.wait();
+          showMsg('route-msg', 'Trade routed.', 'ok');
